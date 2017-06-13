@@ -30,7 +30,7 @@ public:
   ///* state covariance matrix
   MatrixXd P_;
     
-    VectorXd P_aug_;
+  MatrixXd P_aug_;
 
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
