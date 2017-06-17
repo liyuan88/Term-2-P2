@@ -28,10 +28,10 @@ UKF::UKF() {
     P_=MatrixXd(5,5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-    std_a_ = 1.8;
+    std_a_ = 0.08;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-    std_yawdd_ = 0.7;
+    std_yawdd_ = 5.0;
 
   // Laser measurement noise standard deviation position1 in m
     std_laspx_ = 0.15;
@@ -84,8 +84,8 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         //Initialize covariance matrix P_
         P_<<1,0,0,0,0,
             0,1,0,0,0,
-            0,0,1000,0,0,
-            0,0,0,1000,0,
+            0,0,1,0,0,
+            0,0,0,1,0,
             0,0,0,0,1;
         
         cout<<"P_:"<<P_<<endl;
@@ -165,7 +165,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     cout<<"Finish Prediction"<<endl;
     
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
-        UpdateLidar(meas_package);
+        UpdateRadar(meas_package);
     } else {
         UpdateLidar(meas_package);
     }
@@ -275,7 +275,7 @@ void UKF::Prediction(double delta_t) {
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
     int n_z=2;
     VectorXd z = meas_package.raw_measurements_;
-    //cout<<"z (Lidar): "<<z<<endl;
+    cout<<"z (Lidar): "<<z<<endl;
     
     MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
     Zsig.fill(0.0);
@@ -288,13 +288,13 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
         Zsig(0,i) = Xsig_pred_(0,i);
         Zsig(1,i) = Xsig_pred_(1,i);
     }
-    //cout<<"Zsig (Lidar): "<<Zsig<<endl;
+    cout<<"Zsig (Lidar): "<<Zsig<<endl;
     
     VectorXd z_pred = VectorXd(n_z);
     z_pred.fill(0.0);
     z_pred=Zsig * weights_;
     
-    //cout<<"z_pred (Lidar): "<<z_pred<<endl;
+    cout<<"z_pred (Lidar): "<<z_pred<<endl;
     
     //measurement covariance matrix S
     MatrixXd S = MatrixXd(n_z,n_z);
@@ -313,7 +313,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
     S = S + R;
     
-    //cout << "S (Lidar): "<<S<<endl;
+    cout << "S (Lidar): "<<S<<endl;
     
     MatrixXd Tc = MatrixXd(n_x_, n_z);
     Tc.fill(0.0);
@@ -334,7 +334,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     //residual
     VectorXd z_diff = z - z_pred;
     
-    //cout << "z_diff (Lidar) "<<z_diff<<endl;
+    cout << "z_diff (Lidar) "<<z_diff<<endl;
     
     //update state mean and covariance matrix
     x_ = x_ + K * z_diff;
@@ -349,7 +349,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     
     int n_z=3;
     VectorXd z = meas_package.raw_measurements_;
-    //cout<<"z (Radar): "<<z<<endl;
+    cout<<"z (Radar): "<<z<<endl;
     
     MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
     Zsig.fill(0.0);
@@ -377,13 +377,13 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
         Zsig(1,i) = atan2(p_y,p_x);                                 //phi
         Zsig(2,i) = (p_x*v1 + p_y*v2 ) / sqrt(p_x*p_x + p_y*p_y);   //r_dot
     }
-    //cout<<"Zsig (Radar): "<<Zsig<<endl;
+    cout<<"Zsig (Radar): "<<Zsig<<endl;
     
     VectorXd z_pred = VectorXd(n_z);
     z_pred.fill(0.0);
     z_pred=Zsig*weights_;
     
-    //cout<<"z_pred (Radar): "<<z_pred<<endl;
+    cout<<"z_pred (Radar): "<<z_pred<<endl;
     
     //measurement covariance matrix S
     MatrixXd S = MatrixXd(n_z,n_z);
@@ -406,14 +406,13 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
             0, 0,std_radrd_*std_radrd_;
     
     S = S + R;
-    //cout << "S (Radar): "<<S<<endl;
+    cout << "S (Radar): "<<S<<endl;
     
     MatrixXd Tc = MatrixXd(n_x_, n_z);
     Tc.fill(0.0);
     
     //VectorXd z = VectorXd(n_z);
     //z.fill(0.0);
-    
     for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
         
         //residual
@@ -431,12 +430,13 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     }
     
     //Kalman gain K;
+    
     MatrixXd K = Tc * S.inverse();
     
     //residual
-    VectorXd z_diff = z - z_pred;
+    //ctorXd z_diff = z - z_pred;
     //cout << "z_diff (Radar) "<<z_diff<<endl;
-    
+    VectorXd z_diff=z-z_pred;
     //angle normalization
     while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
     while (z_diff(1)< -M_PI) z_diff(1)+=2.*M_PI;
