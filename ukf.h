@@ -92,6 +92,9 @@ public:
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
    */
+    
+  void NormAng(double *ang);    
+
   void ProcessMeasurement(MeasurementPackage meas_package);
 
   /**
